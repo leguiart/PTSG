@@ -79,7 +79,7 @@ class Ship(Sprite):
         
     def key(self,ang_acc = 0.0, key_up= False):
         if key_up:
-            self.angle_vel=0
+            self.angle_vel *= self.fr
         else:
             self.angle_vel += ang_acc
         
@@ -161,26 +161,7 @@ class EnemyShips(Ship, SpriteGroup):
         if enemy.angle_front <= enemy.values["ang_rang"]:
             return True
             
-    #do differential control
     def enemy_ai(self, player):
-        """
-        #error de posicion: posicion deseada - posicion actual
-        error_x = goal_x - robot_x
-        error_y = goal_y - robot_y
-        #angulo deseado: angulo del vector de error
-        goal_a = np.arctan2(error_y,error_x)
-        #error del angulo: angulo deseado - angulo actual
-        error_a = goal_a - robot_a
-        #nos aseguramos que la rotacion del robot sea la minima hasta el angulo deseado
-        if error_a < - M_PI:
-            error_a+=2*M_PI
-        else if error_a > M_PI:
-            error_a-=2*M_PI
-        #si la distancia hasta el punto meta es mayor o igual que 0.1 mts calculamos la funcion de velocidad lineal y angular (gaussiana y sigmoide respectivamente)
-        if np.sqrt(error_x*error_x + error_y*error_y)>=0.1:
-            v_x = Kv * exp(-error_a*error_a/0.5)
-            w = Ka * (2/(1 + exp(-error_a/0.5))-1)
-        """
         enemy_copy = self.enemy_group.copy()
         for enemy in enemy_copy:
             if self.facing(enemy, player) and Auxiliars.dist(enemy.pos, player.pos) > enemy.values["min_dist"]:

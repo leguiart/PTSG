@@ -135,7 +135,7 @@ class Game:
         frame.set_keydown_handler(self.keydown_hand)
         frame.set_keyup_handler(self.keyup_hand)
         frame.set_mouseclick_handler(self.click)
-        #timer = simplegui.create_timer(1000.0, self.rock_spawner)
+        timer = simplegui.create_timer(1000.0, self.rock_spawner)
         # get things rolling
-        #timer.start()
+        timer.start()
         frame.start()

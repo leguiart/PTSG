@@ -21,9 +21,7 @@ globals["HEIGHT"] = 600
 globals["lives"] = 3
 globals["time"] = 0.5
 globals["sc_dif"] = 1.0
-    
-# art assets created by Kim Lathrop, may be freely re-used in non-commercial projects, please credit Kim
-    
+        
 # debris images - debris1_brown.png, debris2_brown.png, debris3_brown.png, debris4_brown.png
 #                 debris1_blue.png, debris2_blue.png, debris3_blue.png, debris4_blue.png, debris_blend.png
 p["debris_info"] = ImageInfo([320, 240], [640, 480])
@@ -53,7 +51,6 @@ p["asteroid_image"] = simplegui.load_image("http://commondatastorage.googleapis.
 p["explosion_info"] = ImageInfo([64, 64], [128, 128], 17, 24, True)
 p["explosion_image"] = simplegui.load_image("http://commondatastorage.googleapis.com/codeskulptor-assets/lathrop/explosion_alpha.png")
 
-# sound assets purchased from sounddogs.com, please do not redistribute
 p["soundtrack"] = simplegui.load_sound("http://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3")
 shipP["missile_sound"] = simplegui.load_sound("http://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/missile.mp3")
 shipP["missile_sound"].set_volume(.5)
@@ -72,10 +69,12 @@ p["enemy"] = Ship([globals["WIDTH"] / 2, globals["HEIGHT"] / 2], [0, 0], p["ship
 p["enemy_len"] = 5
 #p["ranges"] = {"angle" : 6.0, "ang_acc" : 0.02, "acc" : 0.05, "ang_rang" : 30.0, "min_dist" : 120.0, "V" : 2000.0, "T" : 0.99}
 #The next values would correspond to a manually set population of 4 individuals with an established fenotype
-p["enemy_list"] = [{"angle" : 6.0, "ang_acc" : 0.05, "acc" : 0.08, "ang_rang" : 26.0, "min_dist" : 120.0, "V" : 2000.0, "T" : 0.99},
-                    {"angle" : 6.0, "ang_acc" : 0.02, "acc" : 0.04, "ang_rang" : 26.0, "min_dist" : 120.0, "V" : 2000.0, "T" : 0.6},
-                    {"angle" : 6.0, "ang_acc" : 0.01, "acc" : 0.06, "ang_rang" : 26.0, "min_dist" : 120.0, "V" : 2000.0, "T" : 0.6},
-                    {"angle" : 6.0, "ang_acc" : 0.06, "acc" : 0.02, "ang_rang" : 26.0, "min_dist" : 120.0, "V" : 2000.0, "T" : 0.7}
-                    ]
+p["enemy_list"] = [{"angle" : 0.0, "ang_acc" : 0.008, "acc" : 0.05, "ang_rang" : 60.0, "min_dist" : 140.0, "V" : 200.0, "T" : 0.99},
+{"angle" : 12.0, "ang_acc" : 0.002, "acc" : 0.01, "ang_rang" : 45.0, "min_dist" : 70.0, "V" : 200.0, "T" : 0.6},
+{"angle" : 20.0, "ang_acc" : 0.001, "acc" : 0.03, "ang_rang" : 36.0, "min_dist" : 140.0, "V" : 200.0, "T" : 0.6},
+{"angle" : 25.0, "ang_acc" : 0.006, "acc" : 0.07, "ang_rang" : 20.0, "min_dist" : 30.0, "V" : 200.0, "T" : 0.7}]
+""" {"angle" : 12.0, "ang_acc" : 0.02, "acc" : 0.01, "ang_rang" : 6.0, "min_dist" : 40.0, "V" : 200.0, "T" : 0.6},
+{"angle" : 20.0, "ang_acc" : 0.01, "acc" : 0.01, "ang_rang" : 6.0, "min_dist" : 40.0, "V" : 200.0, "T" : 0.6},
+{"angle" : 25.0, "ang_acc" : 0.06, "acc" : 0.01, "ang_rang" : 6.0, "min_dist" : 40.0, "V" : 200.0, "T" : 0.7}"""
 g = Game(globals, p)
 g.get_rolling(frame)
