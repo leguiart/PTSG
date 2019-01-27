@@ -50,7 +50,7 @@ class Auxiliars:
 
 # Ship class
 class Ship:
-    def __init__(self, pos, vel, angle, angle_vel, image, info, missile_image, missile_info, missile_sound, ship_thrust_sound, WIDTH, HEIGHT, is_kinetic = False, acc = 0, ang_acc = 0, fr = 0):
+    def __init__(self, pos, vel, angle, angle_vel, image, info, missile_image, missile_info, missile_sound, ship_thrust_sound, WIDTH, HEIGHT, is_kinetic = False, acc = 0, ang_acc = 0, fr = 0, lives = 0, life = 0):
         self.image = image
         self.image_center = info.get_center()
         self.image_size = info.get_size()
@@ -63,6 +63,9 @@ class Ship:
         self.missile_sound = missile_sound
         self.ship_thrust_sound = ship_thrust_sound
         self.missile_group = set([])
+        self.lives = lives
+        self.life = life
+        self.score = 0
         if is_kinetic:             
             self.physics = Physics(radius, WIDTH, HEIGHT, None, is_kinetic, fr)
             self.physics.set_ang_acc(ang_acc)
@@ -95,6 +98,7 @@ class Ship:
 
     def process_missile_group(self, canvas):
         SpriteGroup.process_sprite_group(canvas, self.missile_group)
+        SpriteGroup.process_lifespan_group(canvas, self.missile_group)
 
     def shoot(self):
         front = self.get_front()
@@ -104,7 +108,7 @@ class Ship:
         [vel[0] + front[0]*self.physics.get_radius()/5, vel[1] + front[1]*self.physics.get_radius()/5],
         0, 0, self.missile_image, self.missile_info, self.physics.WIDTH, self.physics.HEIGHT,self.missile_sound))
 
-    def collide_ship_sprites(self, group, explosion_group, lives, explosion_image, explosion_info):
+    def collide_ship_sprites(self, group, explosion_group, explosion_image, explosion_info):
         group_copy= set([])
         aux_copy = group.copy()
         for sprite in aux_copy:
@@ -112,7 +116,9 @@ class Ship:
                 group_copy.add(sprite)
                 explosion = Sprite(sprite.get_physics_component().get_pos(), [0,0], 0, 0, explosion_image, explosion_info, self.physics.WIDTH, self.physics.HEIGHT)
                 explosion_group.add(explosion)
-                lives-=1
+                explosion_group.add(Sprite(self.physics.get_pos(), [0,0], 0, 0, explosion_image, explosion_info, self.physics.WIDTH, self.physics.HEIGHT))
+                if self.life <= 0:
+                    self.lives-=1
         group.difference_update(group_copy)
 
     def get_front(self):
@@ -142,12 +148,18 @@ class Sprite:
         if sound:
             sound.rewind()
             sound.play()
-        if is_kinetic: 
-            self.physics = Physics(radius, WIDTH, HEIGHT, is_kinetic, fr)
+        if is_kinetic:
+            if self.lifespan == None: 
+                self.physics = Physics(radius, WIDTH, HEIGHT, None, is_kinetic, fr)
+            else:
+                self.physics = Physics(radius, WIDTH, HEIGHT, self.lifespan, is_kinetic, fr)
             self.physics.set_ang_acc(ang_acc)
             self.physics.set_acc(acc)            
         else:
-            self.physics = Physics(radius, WIDTH, HEIGHT)
+            if self.lifespan == None:
+                self.physics = Physics(radius, WIDTH, HEIGHT)
+            else:
+                self.physics = Physics(radius, WIDTH, HEIGHT, self.lifespan)
         self.physics.set_pos(pos)
         self.physics.set_vel(vel)
         self.physics.set_ang(angle)
@@ -155,7 +167,7 @@ class Sprite:
    
     def draw(self, canvas):
         if self.animated:
-            canvas.draw_image(self.image, [self.image_center[0] + (self.age*self.image_size[0]), self.image_center[1]], self.image_size, self.pos, self.image_size, self.angle)
+            canvas.draw_image(self.image, [self.image_center[0] + (self.physics.age*self.image_size[0]), self.image_center[1]], self.image_size, self.pos, self.image_size, self.angle)
         else:
             canvas.draw_image(self.image, self.image_center, self.image_size, self.physics.get_pos(), self.image_size, self.physics.get_angle())
     
@@ -182,7 +194,7 @@ class SpriteGroup(Sprite):
         group.difference_update(group_copy)
         
     @staticmethod
-    def collide_sprite_sprite(group1, group2, explosion_group, score, explosion_image, explosion_info):
+    def collide_sprite_sprite(group1, group2, explosion_group, explosion_image, explosion_info, shipObject = None):
         group1_copy= set([])
         group2_copy= set([])
         aux_copy1 = group1.copy() #Same for this
@@ -192,7 +204,8 @@ class SpriteGroup(Sprite):
                 if element1.physics.collide(element2) is True:
                     group1_copy.add(element1)
                     group2_copy.add(element2)
-                    score+=1
+                    if shipObject is not None:
+                        shipObject.score+=1
                     explosion= Sprite(element1.get_physics_component().get_pos(), [0,0], 0, 0, explosion_image, explosion_info, element1.physics.WIDTH, element2.physics.HEIGHT)
                     explosion_group.add(explosion)
         group1.difference_update(group1_copy)
@@ -253,10 +266,7 @@ class Physics:
         if self.is_kinetic:
             for i in range(2):
                 self.kinematic_dict["vel"][i]= self.kinematic_dict["vel"][i]*(1-self.kinetic_dict["fr"])
-            #if self.kinetic_dict["ang_acc"] >= 0:
             self.kinematic_dict["ang_vel"] = self.kinematic_dict["ang_vel"]*(1-self.kinetic_dict["fr"])
-            #else:
-                #self.kinematic_dict["ang_vel"] = self.kinematic_dict["ang_vel"]*(self.kinetic_dict["fr"]-1)
         
     def add_force(self, acc = 0):
         if acc != 0:
@@ -270,11 +280,7 @@ class Physics:
         if ang_acc != 0:
             self.kinetic_dict["ang_acc"] = ang_acc
         self.update()
-        # if self.kinetic_dict["ang_acc"] > 0:
         self.kinematic_dict["ang_vel"] += self.kinetic_dict["ang_acc"]
-
-
-        print('angular vel: ', self.kinematic_dict["ang_vel"])
 
     def get_radius(self):
         return self.radius
@@ -330,8 +336,7 @@ class Game:
         # sets
         self.rock_group = set([])
         self.explosion_group = set()
-        self.globals_dict["score"] = 0
-        self.lives = globals_dict["lives"]
+        self.lives = pars["ship"].lives
         self.sc_dif = globals_dict["sc_dif"]
         self.globals_dict["started"] = False
         self.spawn = True
@@ -374,22 +379,24 @@ class Game:
         
         self.pars["ship"].get_physics_component().update()
         SpriteGroup.process_sprite_group(canvas, self.rock_group)
-        self.pars["ship"].collide_ship_sprites(self.rock_group, self.explosion_group, self.globals_dict["lives"], self.pars["explosion_image"], self.pars["explosion_info"])
-        SpriteGroup.collide_sprite_sprite(self.rock_group, self.pars["ship"].missile_group, self.explosion_group, self.globals_dict["score"], self.pars["explosion_image"], self.pars["explosion_info"])
+        self.pars["ship"].collide_ship_sprites(self.rock_group, self.explosion_group, self.pars["explosion_image"], self.pars["explosion_info"])
+        SpriteGroup.collide_sprite_sprite(self.rock_group, self.pars["ship"].missile_group, self.explosion_group, self.pars["explosion_image"], self.pars["explosion_info"], self.pars["ship"])
         SpriteGroup.process_sprite_group(canvas, self.rock_group)
+        SpriteGroup.process_sprite_group(canvas, self.explosion_group)
+        self.pars["ship"].process_missile_group(canvas)
         
         canvas.draw_text("Lives", (40, 40), 18, "White", "sans-serif")
-        canvas.draw_text(str(self.globals_dict["lives"]), (40, 64), 18, "White", "sans-serif")
+        canvas.draw_text(str(self.pars["ship"].lives), (40, 64), 18, "White", "sans-serif")
         
         canvas.draw_text("Score", (self.globals_dict["WIDTH"] - 80, 40), 18, "White", "sans-serif")
-        canvas.draw_text(str(self.globals_dict["score"]), (self.globals_dict["WIDTH"] - 80, 64), 18, "White", "sans-serif")
+        canvas.draw_text(str(self.pars["ship"].score), (self.globals_dict["WIDTH"] - 80, 64), 18, "White", "sans-serif")
         
-        if self.globals_dict["lives"]<=0:
+        if self.pars["ship"].lives<0:
             self.globals_dict["started"] = False
-            self.globals_dict["lives"] = self.lives
-            self.globals_dict["score"] = 0  
+            self.pars["ship"].lives = self.lives
+            self.pars["ship"].score = 0  
             self.rock_group = set([])
-            self.enemy_ships.spawn = True
+            #self.enemy_ships.spawn = True
             self.globals_dict["sc_dif"] = self.sc_dif        
         # draw splash screen if not started
         if not self.globals_dict["started"]:        
@@ -405,7 +412,7 @@ class Game:
         for s in self.rock_group:
             x+=1
         rock_pos=[random.randrange(0, self.globals_dict["WIDTH"]-44),random.randrange(0, self.globals_dict["HEIGHT"]-44)]
-        if self.globals_dict["score"]>0 and self.globals_dict["score"]%5==0:
+        if self.pars["ship"].score>0 and self.pars["ship"].score%5==0:
             self.explosion_group=set()
             self.globals_dict["sc_dif"]+=.2
         rock_vel=[random.randrange(-1,3) * random.random() * self.globals_dict["sc_dif"], random.randrange(-1,3) * random.random() * self.globals_dict["sc_dif"]]
@@ -504,7 +511,7 @@ p["explosion_sound"] = simplegui.load_sound("http://commondatastorage.googleapis
 frame = simplegui.create_frame("Asteroids", globals["WIDTH"], globals["HEIGHT"])
 
 p["ship"] = Ship([globals["WIDTH"] / 2, globals["HEIGHT"] / 2], [0, 0], 0, 0, p["ship_image"], p["ship_info"],\
-p["missile_image"], p["missile_info"], p["missile_sound"], p["ship_thrust_sound"], globals["WIDTH"], globals["HEIGHT"],True, 0.1, 0.0008, 0.009)
+p["missile_image"], p["missile_info"], p["missile_sound"], p["ship_thrust_sound"], globals["WIDTH"], globals["HEIGHT"],True, 0.1, 0.0008, 0.009, 3)
 #p["ship"].set_values({"ang_acc" : 0.08, "acc" : 0.1})
 #p["a_rock"] = Sprite([globals["WIDTH"]+44, globals["HEIGHT"]+44], [random.randrange(-1,2)*random.random(), random.randrange(-1,2)*random.random()], \
 # random.random(), 0.10471976, p["asteroid_image"], p["asteroid_info"], globals["WIDTH"], globals["HEIGHT"])
