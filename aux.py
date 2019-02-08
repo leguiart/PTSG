@@ -24,3 +24,9 @@ class Auxiliars:
     @staticmethod
     def dist(p,q):
         return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
+
+    @staticmethod
+    def merge_two_dicts(x, y):
+        z = x.copy()   # start with x's keys and values
+        z.update(y)    # modifies z with y's keys and values & returns None
+        return z
